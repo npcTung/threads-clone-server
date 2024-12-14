@@ -1,0 +1,6 @@
+GET http://localhost:5000
+
+###################################
+POST http://localhost:5000/api/insert/insert-user
+###################################
+POST http://localhost:5000/api/insert/insert-post
