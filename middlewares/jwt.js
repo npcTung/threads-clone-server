@@ -9,6 +9,7 @@ module.exports = (uid, role, res) => {
     httpOnly: true,
     maxAge: 1000 * 60 * 60 * 7, // 7 days
     secure: process.env.NODE_ENV !== "development",
+    samesite: "None",
   });
 
   return token;
