@@ -2,11 +2,11 @@ const ActivityLog = require("../models/activity-log.model");
 const asyncHandler = require("express-async-handler");
 
 const getAllActivityLogs = asyncHandler(async (req, res) => {
-  const { id } = req.user;
+  const { userId } = req.user;
   const cursor = req.query.cursor || undefined;
   const pageSize = 20;
 
-  const formatedQueries = { userId: id };
+  const formatedQueries = { userId };
 
   if (cursor) formatedQueries._id = { $lt: cursor };
 

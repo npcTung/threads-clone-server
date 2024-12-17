@@ -8,7 +8,6 @@ const asyncHandler = require("express-async-handler");
 const createComment = asyncHandler(async (req, res) => {
   const { postId } = req.params;
   const { context } = req.body;
-  const { id } = req.user;
   const userPopulate = [
     {
       path: "userId",
@@ -16,12 +15,6 @@ const createComment = asyncHandler(async (req, res) => {
         "-verified -password -role -otp -otp_expiry_time -filename -updatedAt",
     },
   ];
-
-  const user = await User.findById(id);
-  if (!user)
-    return res
-      .status(401)
-      .json({ success: false, mes: "Không tìm thấy người dùng." });
 
   if (!context) throw new Error("Cần phải có ngữ cảnh.");
 
@@ -69,7 +62,6 @@ const createComment = asyncHandler(async (req, res) => {
 
 const getAllComments = asyncHandler(async (req, res) => {
   const { postId } = req.params;
-  const { id } = req.user;
   const cursor = req.query.cursor || null;
   const pageSize = 10;
   const userPopulate = [
@@ -79,12 +71,6 @@ const getAllComments = asyncHandler(async (req, res) => {
         "-verified -password -role -otp -otp_expiry_time -filename -updatedAt",
     },
   ];
-
-  const user = await User.findById(id);
-  if (!user)
-    return res
-      .status(401)
-      .json({ success: false, mes: "Không tìm thấy người dùng." });
 
   const post = await Post.findById(postId);
   if (!post)
@@ -113,13 +99,7 @@ const getAllComments = asyncHandler(async (req, res) => {
 
 const deleteComment = asyncHandler(async (req, res) => {
   const { cid } = req.params;
-  const { id } = req.user;
-
-  const user = await User.findById(id);
-  if (!user)
-    return res
-      .status(401)
-      .json({ success: false, mes: "Không tìm thấy người dùng." });
+  const { userId } = req.user;
 
   const deletedComment = await Comment.findByIdAndDelete(cid);
 
@@ -132,7 +112,7 @@ const deleteComment = asyncHandler(async (req, res) => {
     });
     await ActivityLog.deleteMany({
       commentId: cid,
-      userId: id,
+      userId,
       postId: deletedComment.postId,
       type: "Comment",
     });
@@ -149,7 +129,6 @@ const deleteComment = asyncHandler(async (req, res) => {
 
 const likeUnlikeComment = asyncHandler(async (req, res) => {
   const { cid } = req.params;
-  const { id } = req.user;
 
   const userPopulate = [
     {
@@ -158,13 +137,6 @@ const likeUnlikeComment = asyncHandler(async (req, res) => {
         "-verified -password -role -otp -otp_expiry_time -filename -updatedAt",
     },
   ];
-
-  const user = await User.findById(id);
-
-  if (!user)
-    return res
-      .status(401)
-      .json({ success: false, mes: "Không tìm thấy người dùng." });
 
   const comment = await Comment.findById(cid);
   if (!comment)

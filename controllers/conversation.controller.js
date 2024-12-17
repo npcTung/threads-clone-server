@@ -3,7 +3,7 @@ const Message = require("../models/message.model");
 const asyncHandler = require("express-async-handler");
 
 const getAllConversations = asyncHandler(async (req, res) => {
-  const { id } = req.user;
+  const { userId } = req.user;
   const queries = { ...req.query };
   const cursor = queries.cursor || null;
   const pageSize = 10;
@@ -16,8 +16,8 @@ const getAllConversations = asyncHandler(async (req, res) => {
   const objectQueries = JSON.parse(queryString);
   if (cursor) {
     objectQueries._id = { $lte: cursor };
-    objectQueries.participants = { $in: id };
-  } else objectQueries.participants = { $in: id };
+    objectQueries.participants = { $in: userId };
+  } else objectQueries.participants = { $in: userId };
   if (req.query.q) {
     delete objectQueries.q;
     objectQueries["$or"] = [
@@ -38,7 +38,7 @@ const getAllConversations = asyncHandler(async (req, res) => {
           "_id userName displayName avatarUrl status bio socketId status_expiry_time",
       },
     ])
-    .sort({ createdAt: -1 })
+    .sort({ updatedAt: -1 })
     .limit(pageSize + 1)
     .exec();
 
@@ -47,7 +47,7 @@ const getAllConversations = asyncHandler(async (req, res) => {
   for (let conversation of conversations) {
     const countReadMessages = await Message.countDocuments({
       conversationId: conversation._id,
-      senderId: { $ne: id },
+      senderId: { $ne: userId },
       read: false,
     });
 
@@ -74,7 +74,7 @@ const getAllConversations = asyncHandler(async (req, res) => {
 
 const getConversation = asyncHandler(async (req, res) => {
   const { recipientId } = req.params;
-  const { id: senderId } = req.user;
+  const { userId: senderId } = req.user;
 
   const conversation = await Conversation.findOne({
     participants: { $all: [senderId, recipientId] },

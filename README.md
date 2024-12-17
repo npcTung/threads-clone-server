@@ -14,6 +14,9 @@ CLOUDINARY_API_SECRET=...
 // email app password
 EMAIL_APP_PASSWORD=...
 EMAIL_NAME=...
+// stringee api key
+VITE_API_KEY_STRINGEE=...
+VITE_API_SECRET_KEY_STRINGEE=...
 ```
 
 ## Build the app
@@ -44,11 +47,13 @@ npm install --save --force
 npm install --save --legacy-peer-deps
 ```
 
-## Setup uplaod cloudinary, email app password
+## Setup uplaod cloudinary, email app password, stringee api key
 
 - [@Visit Cloudinary](https://cloudinary.com/) -> Login/Register -> Getting started -> Click View API Key to get the key in .env format
 
 - [@Email app password](https://myaccount.google.com/apppasswords) -> Enter gmail password to continue (<b>Note</b>: You must enable step verification before doing this part.) -> <b>Enter characters in the Project Name box</b> -> Click the generate button. A box will appear showing the characters to enter in the EMAIL_APP_PASSWORD of the .env file.
+
+- [@api key stringee](https://asia-1.console.stringee.com/project) login and click on new project button to create new project to get api key
 
 ## Node version
 

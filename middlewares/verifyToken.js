@@ -9,16 +9,20 @@ const verifyAccessToken = asyncHandler(async (req, res, next) => {
       mes: "You are not logged in! Please log in to get access.",
     });
   else {
-    jwt.verify(token, process.env.SECRET_KEY, (err, decode) => {
-      if (err)
-        return res
-          .status(401)
-          .json({ success: false, mes: "Invalid access token" });
+    jwt.verify(
+      token,
+      process.env.VITE_API_SECRET_KEY_STRINGEE,
+      (err, decode) => {
+        if (err)
+          return res
+            .status(401)
+            .json({ success: false, mes: "Invalid access token" });
 
-      req.user = decode;
+        req.user = decode;
 
-      next();
-    });
+        next();
+      }
+    );
   }
 });
 

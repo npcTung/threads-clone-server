@@ -6,9 +6,9 @@ const asyncHandler = require("express-async-handler");
 const cloudinary = require("cloudinary").v2;
 
 const getCurrent = asyncHandler(async (req, res) => {
-  const { id } = req.user;
+  const { userId } = req.user;
 
-  const user = await User.findById(id)
+  const user = await User.findById(userId)
     .select("-verified -password -role -otp -otp_expiry_time")
     .populate([
       {
@@ -34,7 +34,7 @@ const getCurrent = asyncHandler(async (req, res) => {
 
 const getUsers = asyncHandler(async (req, res) => {
   const queries = { ...req.query };
-  const { id } = req.user;
+  const { userId } = req.user;
   const cursor = queries.cursor || null;
   const pageSize = 10;
   let queryString = JSON.stringify(queries);
@@ -43,10 +43,12 @@ const getUsers = asyncHandler(async (req, res) => {
     (macthedEl) => `$${macthedEl}`
   );
 
-  const user = await User.findById(id);
+  const user = await User.findById(userId);
   if (!user) throw new Error("Không tìm thấy người dùng.");
 
-  const blockIds = user.blockedUsers ? [...user.blockedUsers, id] : [id];
+  const blockIds = user.blockedUsers
+    ? [...user.blockedUsers, userId]
+    : [userId];
 
   const formatedQueries = JSON.parse(queryString);
   delete formatedQueries.cursor;
@@ -98,7 +100,7 @@ const getUsers = asyncHandler(async (req, res) => {
 
 const getUser = asyncHandler(async (req, res) => {
   const { userName } = req.params;
-  const { id } = req.user;
+  const { userId } = req.user;
 
   const user = await User.findOne({ userName })
     .select("-verified -password -role -otp -otp_expiry_time")
@@ -114,7 +116,7 @@ const getUser = asyncHandler(async (req, res) => {
     ]);
   if (!user) throw new Error("Không tìm thấy người dùng.");
 
-  const currentUser = await User.findById(id);
+  const currentUser = await User.findById(userId);
   if (!currentUser) throw new Error("Không tìm thấy người dùng.");
   else if (
     currentUser.blockedUsers &&
@@ -129,7 +131,7 @@ const getUser = asyncHandler(async (req, res) => {
 });
 
 const updateUser = asyncHandler(async (req, res) => {
-  const { id } = req.user;
+  const { userId } = req.user;
   const { displayName, bio } = req.body;
 
   if (!displayName) throw new Error("Yêu cầu không hợp lệ.");
@@ -145,7 +147,7 @@ const updateUser = asyncHandler(async (req, res) => {
     "link"
   );
 
-  const updateUser = await User.findByIdAndUpdate(id, filteredBody, {
+  const updateUser = await User.findByIdAndUpdate(userId, filteredBody, {
     new: true,
     validateModifiedOnly: true,
   }).populate([
@@ -173,13 +175,13 @@ const updateUser = asyncHandler(async (req, res) => {
 });
 
 const updateAvatar = asyncHandler(async (req, res) => {
-  const { id } = req.user;
+  const { userId } = req.user;
   const avatarUrl = req.file.path;
   const filename = req.file.filename;
 
   if (!(avatarUrl && filename)) throw new Error("Avatar không hợp lệ.");
 
-  const user = await User.findById(id);
+  const user = await User.findById(userId);
   if (!user) {
     cloudinary.uploader.destroy(filename);
     throw new Error("Không tìm thấy người dùng.");
@@ -206,12 +208,12 @@ const updateAvatar = asyncHandler(async (req, res) => {
 
 const followUnfollow = asyncHandler(async (req, res) => {
   const { uid } = req.params;
-  const { id } = req.user;
+  const { userId } = req.user;
 
   const userToModify = await User.findById(uid);
-  const currentUser = await User.findById(id);
+  const currentUser = await User.findById(userId);
 
-  if (id === uid)
+  if (userId === uid)
     throw new Error("Bạn không thể theo dõi/bỏ theo dõi chính mình.");
 
   if (!userToModify || !currentUser)
@@ -221,9 +223,9 @@ const followUnfollow = asyncHandler(async (req, res) => {
 
   if (isFollowing) {
     // unfollow
-    await User.findByIdAndUpdate(uid, { $pull: { follower: id } });
+    await User.findByIdAndUpdate(uid, { $pull: { follower: userId } });
     const unfollow = await User.findByIdAndUpdate(
-      id,
+      userId,
       { $pull: { following: uid } },
       { new: true, validateModifiedOnly: true }
     );
@@ -232,7 +234,7 @@ const followUnfollow = asyncHandler(async (req, res) => {
       recipientId: userToModify._id,
       type: "Follow",
     });
-    await ActivityLog.deleteMany({ userId: id, type: "Follow" });
+    await ActivityLog.deleteMany({ userId, type: "Follow" });
     return res.status(200).json({
       success: true,
       mes: "Bỏ theo dõi người dùng thành công.",
@@ -240,9 +242,9 @@ const followUnfollow = asyncHandler(async (req, res) => {
     });
   } else {
     // follow
-    await User.findByIdAndUpdate(uid, { $push: { follower: id } });
+    await User.findByIdAndUpdate(uid, { $push: { follower: userId } });
     const follow = await User.findByIdAndUpdate(
-      id,
+      userId,
       { $push: { following: uid } },
       { new: true, validateModifiedOnly: true }
     ).populate([
@@ -264,7 +266,7 @@ const followUnfollow = asyncHandler(async (req, res) => {
       recipientId: userToModify._id,
       type: "Follow",
     });
-    await ActivityLog.create({ userId: id, type: "Follow" });
+    await ActivityLog.create({ userId, type: "Follow" });
     return res.status(200).json({
       success: true,
       mes: "Theo dõi người dùng thành công.",
@@ -275,12 +277,12 @@ const followUnfollow = asyncHandler(async (req, res) => {
 
 const blockAccount = asyncHandler(async (req, res) => {
   const { uid } = req.params;
-  const { id } = req.user;
+  const { userId } = req.user;
 
   const userToModify = await User.findById(uid);
   const currentUser = await User.findById(id);
 
-  if (id === uid) throw new Error("Bạn không thể chặn/bỏ chặn chính mình.");
+  if (userId === uid) throw new Error("Bạn không thể chặn/bỏ chặn chính mình.");
 
   if (!userToModify || !currentUser)
     throw new Error("Không tìm thấy người dùng.");
@@ -290,7 +292,7 @@ const blockAccount = asyncHandler(async (req, res) => {
   if (isBlocked) {
     // unblock
     const unblock = await User.findByIdAndUpdate(
-      id,
+      userId,
       {
         $pull: { blockedUsers: uid },
       },
@@ -317,7 +319,7 @@ const blockAccount = asyncHandler(async (req, res) => {
   } else {
     // block
     const block = await User.findByIdAndUpdate(
-      id,
+      userId,
       {
         $push: { blockedUsers: uid },
       },
@@ -337,8 +339,8 @@ const blockAccount = asyncHandler(async (req, res) => {
       },
     ]);
     if (currentUser.following.includes(uid)) {
-      await User.findByIdAndUpdate(uid, { $pull: { follower: id } });
-      await User.findByIdAndUpdate(id, { $pull: { following: uid } });
+      await User.findByIdAndUpdate(uid, { $pull: { follower: userId } });
+      await User.findByIdAndUpdate(userId, { $pull: { following: uid } });
     }
     return res.status(200).json({
       success: true,
@@ -350,11 +352,11 @@ const blockAccount = asyncHandler(async (req, res) => {
 
 const bookmarkUnBookmark = asyncHandler(async (req, res) => {
   const { postId } = req.params;
-  const { id } = req.user;
+  const { userId } = req.user;
 
   if (!postId) throw new Error("Mã bài đăng là bắt buộc.");
 
-  const user = await User.findById(id)
+  const user = await User.findById(userId)
     .select("-verified -password -role -otp -otp_expiry_time")
     .populate([
       {
@@ -376,7 +378,7 @@ const bookmarkUnBookmark = asyncHandler(async (req, res) => {
   if (userBookmarked) {
     // unbookmark
     const unbookmark = await User.findByIdAndUpdate(
-      id,
+      userId,
       {
         $pull: { bookmarkedPosts: postId },
       },

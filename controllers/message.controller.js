@@ -9,7 +9,7 @@ const typeDisplayName = (displayName) => displayName.split(/[-_.\s]+/)[0];
 const sendMessage = asyncHandler(async (req, res) => {
   const { recipientId } = req.params;
   const { content, nameConversation } = req.body;
-  const { id: senderId } = req.user;
+  const { userId: senderId } = req.user;
   const io = getIo();
 
   if (!content) throw new Error("Missing content.");
@@ -64,7 +64,7 @@ const sendMessage = asyncHandler(async (req, res) => {
 const sendMessageMedias = asyncHandler(async (req, res) => {
   const { recipientId } = req.params;
   const { nameConversation } = req.body;
-  const { id: senderId } = req.user;
+  const { userId: senderId } = req.user;
   const { medias: mediaFiles } = req.files;
 
   const medias = mediaFiles.map((media) => ({
@@ -125,7 +125,7 @@ const sendMessageMedias = asyncHandler(async (req, res) => {
 const sendMessageAudio = asyncHandler(async (req, res) => {
   const { recipientId } = req.params;
   const { nameConversation } = req.body;
-  const { id: senderId } = req.user;
+  const { userId: senderId } = req.user;
 
   const audio = {
     url: req.file.path,
@@ -184,7 +184,7 @@ const sendMessageAudio = asyncHandler(async (req, res) => {
 const sendMessageDocument = asyncHandler(async (req, res) => {
   const { recipientId } = req.params;
   const { nameConversation } = req.body;
-  const { id: senderId } = req.user;
+  const { userId: senderId } = req.user;
 
   const document = {
     url: req.file.path,
@@ -245,7 +245,7 @@ const sendMessageDocument = asyncHandler(async (req, res) => {
 const sendGiphy = asyncHandler(async (req, res) => {
   const { recipientId } = req.params;
   const { giphyUrl, nameConversation } = req.body;
-  const { id: senderId } = req.user;
+  const { userId: senderId } = req.user;
 
   if (!giphyUrl) throw new Error("Missing content.");
 
@@ -331,9 +331,9 @@ const getAllMessages = asyncHandler(async (req, res) => {
 });
 
 const markAsRead = asyncHandler(async (req, res) => {
-  const { id } = req.user;
+  const { userId: senderId } = req.user;
 
-  await Message.updateMany({ senderId: id, read: false }, { read: true });
+  await Message.updateMany({ senderId, read: false }, { read: true });
 
   return res.status(200).json({
     success: true,

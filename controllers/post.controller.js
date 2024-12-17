@@ -8,7 +8,7 @@ const cloudinary = require("cloudinary").v2;
 
 const createPost = asyncHandler(async (req, res) => {
   const { postedBy, context } = req.body;
-  const { id } = req.user;
+  const { userId } = req.user;
   const postedByPopulate = [
     {
       path: "postedBy",
@@ -22,7 +22,7 @@ const createPost = asyncHandler(async (req, res) => {
   if (!user)
     res.status(404).json({ success: false, mes: "Không tìm thấy người dùng." });
 
-  if (user._id.toString() !== id)
+  if (user._id.toString() !== userId)
     res.status(401).json({
       success: false,
       mes: "Không được phép tạo bài đăng.",
@@ -52,7 +52,7 @@ const createPost = asyncHandler(async (req, res) => {
 
 const uploadFiles = asyncHandler(async (req, res) => {
   const { postId } = req.params;
-  const { id } = req.user;
+  const { userId } = req.user;
   const postedByPopulate = [
     {
       path: "postedBy",
@@ -69,7 +69,7 @@ const uploadFiles = asyncHandler(async (req, res) => {
       .status(404)
       .json({ success: false, mes: "Bài viết không tìm thấy." });
   }
-  if (post.postedBy._id.toString() !== id) {
+  if (post.postedBy._id.toString() !== userId) {
     cloudinary.api.delete_resources(
       req?.files?.filePosts?.map((filePost) => filePost.filename)
     );
@@ -201,7 +201,7 @@ const deletePost = asyncHandler(async (req, res) => {
 
 const likeUnlikePost = asyncHandler(async (req, res) => {
   const { postId } = req.params;
-  const { id } = req.user;
+  const { userId } = req.user;
   const postedByPopulate = [
     {
       path: "postedBy",
@@ -217,26 +217,26 @@ const likeUnlikePost = asyncHandler(async (req, res) => {
       .status(404)
       .json({ success: false, mes: "Bài viết không tìm thấy." });
 
-  const userLikedPost = post.likes.includes(id);
+  const userLikedPost = post.likes.includes(userId);
 
   if (userLikedPost) {
     // unlike
     const unlike = await Post.findByIdAndUpdate(
       postId,
-      { $pull: { likes: id } },
+      { $pull: { likes: userId } },
       { new: true, validateModifiedOnly: true }
     ).populate(postedByPopulate);
     if (unlike) {
-      await User.findByIdAndUpdate(id, { $pull: { likedPosts: postId } });
+      await User.findByIdAndUpdate(userId, { $pull: { likedPosts: postId } });
       await Activity.deleteMany({
-        isSuerId: id,
+        isSuerId: userId,
         recipientId: unlike.postedBy._id,
         postId,
         type: "Like",
       });
       await ActivityLog.deleteOne({
         postId: unlike._id,
-        userId: id,
+        userId,
         type: "Like",
       });
     }
@@ -249,18 +249,18 @@ const likeUnlikePost = asyncHandler(async (req, res) => {
     });
   } else {
     // like
-    post.likes.push(id);
+    post.likes.push(userId);
     const like = await post.save({ new: true, validateModifiedOnly: true });
     if (like) {
       await User.findByIdAndUpdate(id, { $push: { likedPosts: postId } });
       await ActivityLog.create({
         postId: like._id,
-        userId: id,
+        userId,
         type: "Like",
       });
-      if (like.postedBy._id.toString() !== id)
+      if (like.postedBy._id.toString() !== userId)
         await Activity.create({
-          isSuerId: id,
+          isSuerId: userId,
           recipientId: like.postedBy._id,
           postId,
           type: "Like",
@@ -275,7 +275,7 @@ const likeUnlikePost = asyncHandler(async (req, res) => {
 });
 
 const getFeedPosts = asyncHandler(async (req, res) => {
-  const { id } = req.user;
+  const { userId } = req.user;
   const queries = { ...req.query };
   const cursor = queries.cursor || null;
   const pageSize = 10;
@@ -286,7 +286,7 @@ const getFeedPosts = asyncHandler(async (req, res) => {
     },
   ];
 
-  const user = await User.findById(id);
+  const user = await User.findById(userId);
   if (!user)
     return res
       .status(401)
@@ -352,7 +352,7 @@ const getPost = asyncHandler(async (req, res) => {
 
 const getUserPosts = asyncHandler(async (req, res) => {
   const { userName } = req.params;
-  const { id } = req.user;
+  const { userId } = req.user;
   const cursor = req.query.cursor || null;
   const pageSize = 10;
   const postedByPopulate = [
@@ -363,7 +363,7 @@ const getUserPosts = asyncHandler(async (req, res) => {
   ];
 
   const userToModify = await User.findOne({ userName: userName });
-  const currentUser = await User.findById(id);
+  const currentUser = await User.findById(userId);
   if (!userToModify || !currentUser)
     return res.status(404).json({ error: "Không tìm thấy người dùng." });
   if (currentUser.blockedUsers.includes(userToModify._id))

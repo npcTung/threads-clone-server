@@ -5,7 +5,7 @@ const asyncHandler = require("express-async-handler");
 const getActivities = asyncHandler(async (req, res) => {
   const cursor = req.query.cursor || undefined;
   const pageSize = 20;
-  const { id } = req.user;
+  const { userId } = req.user;
   const objPopulate = [
     {
       path: "isSuerId",
@@ -15,7 +15,7 @@ const getActivities = asyncHandler(async (req, res) => {
     { path: "commentId" },
   ];
 
-  const user = await User.findById(id);
+  const user = await User.findById(userId);
   if (!user)
     return res
       .status(404)
@@ -43,10 +43,10 @@ const getActivities = asyncHandler(async (req, res) => {
 });
 
 const unreadCount = asyncHandler(async (req, res) => {
-  const { id } = req.user;
+  const { userId } = req.user;
 
   const unreadCount = await Activity.countDocuments({
-    recipientId: id,
+    recipientId: userId,
     read: false,
   });
 
@@ -57,9 +57,12 @@ const unreadCount = asyncHandler(async (req, res) => {
 });
 
 const markAsRead = asyncHandler(async (req, res) => {
-  const { id } = req.user;
+  const { userId } = req.user;
 
-  await Activity.updateMany({ recipientId: id, read: false }, { read: true });
+  await Activity.updateMany(
+    { recipientId: userId, read: false },
+    { read: true }
+  );
 
   return res.status(200).json({
     success: true,
