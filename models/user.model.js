@@ -47,7 +47,6 @@ var userSchema = new mongoose.Schema(
     otp: String,
     otp_expiry_time: Date,
     verified: { type: Boolean, default: false },
-    status: { type: String, enum: ["Online", "Offline"] },
     role: { type: String, enum: ["Admin", "User"], default: "User" },
     blockedUsers: [{ type: mongoose.Types.ObjectId, ref: "User" }],
     status: { type: String, enum: ["Online", "Offline"], default: "Offline" },
