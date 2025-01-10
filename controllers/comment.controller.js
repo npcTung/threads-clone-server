@@ -8,11 +8,11 @@ const asyncHandler = require("express-async-handler");
 const createComment = asyncHandler(async (req, res) => {
   const { postId } = req.params;
   const { context } = req.body;
+  const { userId } = req.user;
   const userPopulate = [
     {
       path: "userId",
-      select:
-        "-verified -password -role -otp -otp_expiry_time -filename -updatedAt",
+      select: "_id userName displayName avatarUrl bio follower",
     },
   ];
 
@@ -27,7 +27,7 @@ const createComment = asyncHandler(async (req, res) => {
   const comment = await Comment.create({
     context,
     postId,
-    userId: user._id,
+    userId,
   });
 
   if (comment) {
@@ -35,14 +35,14 @@ const createComment = asyncHandler(async (req, res) => {
       userPopulate
     );
     await ActivityLog.create({
-      userId: id,
+      userId,
       postId: postId,
       commentId: commented._id,
       type: "Comment",
     });
-    if (post.postedBy.toString() !== id)
+    if (post.postedBy.toString() !== userId)
       await Activity.create({
-        isSuerId: user._id,
+        isSuerId: userId,
         recipientId: post.postedBy,
         postId,
         commentId: commented._id,
@@ -67,8 +67,7 @@ const getAllComments = asyncHandler(async (req, res) => {
   const userPopulate = [
     {
       path: "userId",
-      select:
-        "-verified -password -role -otp -otp_expiry_time -filename -updatedAt",
+      select: "_id userName displayName avatarUrl bio follower",
     },
   ];
 
@@ -106,7 +105,7 @@ const deleteComment = asyncHandler(async (req, res) => {
   if (deletedComment) {
     await Activity.deleteMany({
       commentId: cid,
-      isSuerId: user._id,
+      isSuerId: userId,
       recipientId: deletedComment.userId._id,
       postId: deletedComment.postId,
     });
@@ -129,12 +128,12 @@ const deleteComment = asyncHandler(async (req, res) => {
 
 const likeUnlikeComment = asyncHandler(async (req, res) => {
   const { cid } = req.params;
+  const { userId: id } = req.user;
 
   const userPopulate = [
     {
       path: "userId",
-      select:
-        "-verified -password -role -otp -otp_expiry_time -filename -updatedAt",
+      select: "_id userName displayName avatarUrl bio follower",
     },
   ];
 
@@ -156,7 +155,7 @@ const likeUnlikeComment = asyncHandler(async (req, res) => {
     if (unlike) {
       await Activity.deleteOne({
         commentId: cid,
-        isSuerId: user._id,
+        isSuerId: id,
         recipientId: unlike.userId._id,
         postId: unlike.postId,
         type: "Like_Comment",

@@ -12,7 +12,7 @@ const createPost = asyncHandler(async (req, res) => {
   const postedByPopulate = [
     {
       path: "postedBy",
-      select: "-verified -password -role -otp -otp_expiry_time",
+      select: "_id userName displayName avatarUrl bio follower",
     },
   ];
 
@@ -38,7 +38,7 @@ const createPost = asyncHandler(async (req, res) => {
 
   if (newPost) {
     getPost = await Post.findById(newPost._id).populate(postedByPopulate);
-    await ActivityLog.create({ userId: id, postId: getPost._id, type: "Post" });
+    await ActivityLog.create({ userId, postId: getPost._id, type: "Post" });
   }
 
   return res.status(newPost ? 200 : 500).json({
@@ -56,7 +56,7 @@ const uploadFiles = asyncHandler(async (req, res) => {
   const postedByPopulate = [
     {
       path: "postedBy",
-      select: "-verified -password -role -otp -otp_expiry_time",
+      select: "_id userName displayName avatarUrl bio follower",
     },
   ];
 
@@ -125,7 +125,7 @@ const updatePost = asyncHandler(async (req, res) => {
   const postedByPopulate = [
     {
       path: "postedBy",
-      select: "-verified -password -role -otp -otp_expiry_time",
+      select: "_id userName displayName avatarUrl bio follower",
     },
   ];
 
@@ -160,6 +160,7 @@ const updatePost = asyncHandler(async (req, res) => {
 
 const deletePost = asyncHandler(async (req, res) => {
   const { postId } = req.params;
+  const { userId } = req.user;
 
   if (!postId) throw new Error("Mã bài đăng là bắt buộc.");
 
@@ -169,7 +170,7 @@ const deletePost = asyncHandler(async (req, res) => {
       .status(404)
       .json({ success: false, mes: "Bài viết không tìm thấy." });
 
-  if (post.postedBy._id.toString() !== req.user.id)
+  if (post.postedBy.toString() !== userId)
     return res.status(401).json({
       success: false,
       mes: "Không được phép xóa bài viết.",
@@ -205,7 +206,7 @@ const likeUnlikePost = asyncHandler(async (req, res) => {
   const postedByPopulate = [
     {
       path: "postedBy",
-      select: "-verified -password -role -otp -otp_expiry_time",
+      select: "_id userName displayName avatarUrl bio follower",
     },
   ];
 
@@ -252,7 +253,7 @@ const likeUnlikePost = asyncHandler(async (req, res) => {
     post.likes.push(userId);
     const like = await post.save({ new: true, validateModifiedOnly: true });
     if (like) {
-      await User.findByIdAndUpdate(id, { $push: { likedPosts: postId } });
+      await User.findByIdAndUpdate(userId, { $push: { likedPosts: postId } });
       await ActivityLog.create({
         postId: like._id,
         userId,
@@ -282,7 +283,7 @@ const getFeedPosts = asyncHandler(async (req, res) => {
   const postedByPopulate = [
     {
       path: "postedBy",
-      select: "-verified -password -role -otp -otp_expiry_time",
+      select: "_id userName displayName avatarUrl bio follower",
     },
   ];
 
@@ -331,7 +332,7 @@ const getPost = asyncHandler(async (req, res) => {
   const postedByPopulate = [
     {
       path: "postedBy",
-      select: "-verified -password -role -otp -otp_expiry_time",
+      select: "_id userName displayName avatarUrl bio follower",
     },
   ];
 
@@ -358,7 +359,7 @@ const getUserPosts = asyncHandler(async (req, res) => {
   const postedByPopulate = [
     {
       path: "postedBy",
-      select: "-verified -password -role -otp -otp_expiry_time",
+      select: "_id userName displayName avatarUrl bio follower",
     },
   ];
 
