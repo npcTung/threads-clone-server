@@ -54,17 +54,25 @@ const getUsers = asyncHandler(async (req, res) => {
   delete formatedQueries.cursor;
   formatedQueries.verified = true;
 
-  if (cursor) formatedQueries._id = { $lte: cursor, $nin: blockIds };
+  if (cursor)
+    formatedQueries._id = {
+      $lte: cursor,
+      $nin: blockIds,
+    };
   else formatedQueries._id = { $nin: blockIds };
   if (queries?.name)
     formatedQueries.name = { $regex: queries.name, $options: "i" };
-  if (req.query.q) {
+  if (queries.q) {
     delete formatedQueries.q;
     formatedQueries["$or"] = [
       { userName: { $regex: req.query.q, $options: "i" } },
       { displayName: { $regex: req.query.q, $options: "i" } },
       { email: { $regex: req.query.q, $options: "i" } },
     ];
+  }
+  if (queries.recipients) {
+    delete formatedQueries.recipients;
+    formatedQueries._id = { $nin: queries.recipients };
   }
 
   try {

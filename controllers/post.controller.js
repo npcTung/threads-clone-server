@@ -122,6 +122,7 @@ const uploadFiles = asyncHandler(async (req, res) => {
 const updatePost = asyncHandler(async (req, res) => {
   const { context } = req.body;
   const { postId } = req.params;
+  const { userId } = req.user;
   const postedByPopulate = [
     {
       path: "postedBy",
@@ -137,7 +138,7 @@ const updatePost = asyncHandler(async (req, res) => {
       .status(404)
       .json({ success: false, mes: "Bài viết không tìm thấy." });
 
-  if (post.postedBy._id.toString() !== req.user.id)
+  if (post.postedBy._id.toString() !== userId)
     return res.status(401).json({
       success: false,
       mes: "Không được phép cập nhật bài viết.",
@@ -147,6 +148,7 @@ const updatePost = asyncHandler(async (req, res) => {
   if (context && context.length > maxlength)
     throw new Error(`Nội dung phải ít hơn ${maxlength} ký tự.`);
 
+  post.historys.push({ context: post.context, createdAt: Date.now() });
   post.context = context;
   const updatedPost = await post.save({
     new: true,

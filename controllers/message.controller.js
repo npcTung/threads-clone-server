@@ -7,19 +7,18 @@ const { getIo } = require("../lib/socket");
 const typeDisplayName = (displayName) => displayName.split(/[-_.\s]+/)[0];
 
 const sendMessage = asyncHandler(async (req, res) => {
-  const { recipientId } = req.params;
-  const { content, nameConversation } = req.body;
+  const { content, nameConversation, recipients } = req.body;
   const { userId: senderId } = req.user;
   const io = getIo();
 
   if (!content) throw new Error("Missing content.");
 
   let conversation = await Conversation.findOne({
-    participants: { $all: [senderId, recipientId] },
+    participants: { $all: [senderId, ...recipients] },
   });
 
   const senderUser = await User.findById(senderId);
-  const recipientUser = await User.findById(recipientId);
+  const recipientUser = await User.findById(recipients[0]);
 
   if (!conversation) {
     const typeConversation = `${typeDisplayName(
@@ -28,7 +27,7 @@ const sendMessage = asyncHandler(async (req, res) => {
 
     conversation = await Conversation.create({
       nameConversation: nameConversation ? nameConversation : typeConversation,
-      participants: [senderId, recipientId],
+      participants: [senderId, ...recipients],
     });
   }
 
@@ -62,8 +61,7 @@ const sendMessage = asyncHandler(async (req, res) => {
 });
 
 const sendMessageMedias = asyncHandler(async (req, res) => {
-  const { recipientId } = req.params;
-  const { nameConversation } = req.body;
+  const { recipients } = req.body;
   const { userId: senderId } = req.user;
   const { medias: mediaFiles } = req.files;
 
@@ -74,22 +72,10 @@ const sendMessageMedias = asyncHandler(async (req, res) => {
   }));
 
   let conversation = await Conversation.findOne({
-    participants: { $all: [senderId, recipientId] },
+    participants: { $all: [senderId, ...recipients] },
   });
 
-  const senderUser = await User.findById(senderId);
-  const recipientUser = await User.findById(recipientId);
-
-  if (!conversation) {
-    const typeConversation = `${typeDisplayName(
-      senderUser.displayName
-    )}, ${typeDisplayName(recipientUser.displayName)}`;
-
-    conversation = await Conversation.create({
-      nameConversation: nameConversation ? nameConversation : typeConversation,
-      participants: [senderId, recipientId],
-    });
-  }
+  if (!conversation) throw new Error("Conversations not found.");
 
   const newMessage = await Message.create({
     senderId,
@@ -123,8 +109,7 @@ const sendMessageMedias = asyncHandler(async (req, res) => {
 });
 
 const sendMessageAudio = asyncHandler(async (req, res) => {
-  const { recipientId } = req.params;
-  const { nameConversation } = req.body;
+  const { recipients } = req.body;
   const { userId: senderId } = req.user;
 
   const audio = {
@@ -133,22 +118,10 @@ const sendMessageAudio = asyncHandler(async (req, res) => {
   };
 
   let conversation = await Conversation.findOne({
-    participants: { $all: [senderId, recipientId] },
+    participants: { $all: [senderId, ...recipients] },
   });
 
-  const senderUser = await User.findById(senderId);
-  const recipientUser = await User.findById(recipientId);
-
-  if (!conversation) {
-    const typeConversation = `${typeDisplayName(
-      senderUser.displayName
-    )}, ${typeDisplayName(recipientUser.displayName)}`;
-
-    conversation = await Conversation.create({
-      nameConversation: nameConversation ? nameConversation : typeConversation,
-      participants: [senderId, recipientId],
-    });
-  }
+  if (!conversation) throw new Error("Conversations not found.");
 
   const newMessage = await Message.create({
     senderId,
@@ -182,8 +155,7 @@ const sendMessageAudio = asyncHandler(async (req, res) => {
 });
 
 const sendMessageDocument = asyncHandler(async (req, res) => {
-  const { recipientId } = req.params;
-  const { nameConversation } = req.body;
+  const { recipients } = req.body;
   const { userId: senderId } = req.user;
 
   const document = {
@@ -194,22 +166,10 @@ const sendMessageDocument = asyncHandler(async (req, res) => {
   };
 
   let conversation = await Conversation.findOne({
-    participants: { $all: [senderId, recipientId] },
+    participants: { $all: [senderId, ...recipients] },
   });
 
-  const senderUser = await User.findById(senderId);
-  const recipientUser = await User.findById(recipientId);
-
-  if (!conversation) {
-    const typeConversation = `${typeDisplayName(
-      senderUser.displayName
-    )}, ${typeDisplayName(recipientUser.displayName)}`;
-
-    conversation = await Conversation.create({
-      nameConversation: nameConversation ? nameConversation : typeConversation,
-      participants: [senderId, recipientId],
-    });
-  }
+  if (!conversation) throw new Error("Conversations not found.");
 
   const newMessage = await Message.create({
     senderId,
@@ -243,29 +203,16 @@ const sendMessageDocument = asyncHandler(async (req, res) => {
 });
 
 const sendGiphy = asyncHandler(async (req, res) => {
-  const { recipientId } = req.params;
-  const { giphyUrl, nameConversation } = req.body;
+  const { giphyUrl, recipients } = req.body;
   const { userId: senderId } = req.user;
 
   if (!giphyUrl) throw new Error("Missing content.");
 
   let conversation = await Conversation.findOne({
-    participants: { $all: [senderId, recipientId] },
+    participants: { $all: [senderId, ...recipients] },
   });
 
-  const senderUser = await User.findById(senderId);
-  const recipientUser = await User.findById(recipientId);
-
-  if (!conversation) {
-    const typeConversation = `${typeDisplayName(
-      senderUser.displayName
-    )}, ${typeDisplayName(recipientUser.displayName)}`;
-
-    conversation = await Conversation.create({
-      nameConversation: nameConversation ? nameConversation : typeConversation,
-      participants: [senderId, recipientId],
-    });
-  }
+  if (!conversation) throw new Error("Conversations not found.");
 
   const newMessage = await Message.create({
     giphyUrl,

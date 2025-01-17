@@ -20,6 +20,7 @@ var postSchema = new mongoose.Schema(
     ],
     filenames: [{ type: String }],
     likes: [{ type: mongoose.Types.ObjectId, ref: "User" }],
+    historys: [{ context: String, createdAt: Date }],
   },
   { timestamps: true }
 );

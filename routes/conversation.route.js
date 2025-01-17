@@ -7,6 +7,16 @@ router.get(
   [verifyAccessToken],
   conversationController.getAllConversations
 );
+router.put(
+  "/name-conversation/:conversationId",
+  [verifyAccessToken],
+  conversationController.updateNameConversation
+);
+router.put(
+  "/participant/:conversationId",
+  [verifyAccessToken],
+  conversationController.updateParticipants
+);
 router.get(
   "/:recipientId",
   [verifyAccessToken],

@@ -3,31 +3,23 @@ const messageController = require("../controllers/message.controller");
 const { verifyAccessToken } = require("../middlewares/verifyToken");
 const upload = require("../config/cloudinary.config");
 
+router.post("/", [verifyAccessToken], messageController.sendMessage);
 router.post(
-  "/media/:recipientId",
+  "/media",
   [verifyAccessToken, upload.fields([{ name: "medias", maxCount: 10 }])],
   messageController.sendMessageMedias
 );
 router.post(
-  "/audio/:recipientId",
+  "/audio",
   [verifyAccessToken, upload.single("audio")],
   messageController.sendMessageAudio
 );
 router.post(
-  "/document/:recipientId",
+  "/document",
   [verifyAccessToken, upload.single("document")],
   messageController.sendMessageDocument
 );
-router.post(
-  "/giphy/:recipientId",
-  [verifyAccessToken],
-  messageController.sendGiphy
-);
-router.post(
-  "/:recipientId",
-  [verifyAccessToken],
-  messageController.sendMessage
-);
+router.post("/giphy", [verifyAccessToken], messageController.sendGiphy);
 router.get(
   "/:conversationId",
   [verifyAccessToken],

@@ -93,4 +93,55 @@ const getConversation = asyncHandler(async (req, res) => {
   });
 });
 
-module.exports = { getAllConversations, getConversation };
+const updateNameConversation = asyncHandler(async (req, res) => {
+  const { conversationId } = req.params;
+  const { nameConversation } = req.body;
+
+  const conversation = await Conversation.findByIdAndUpdate(
+    conversationId,
+    { nameConversation },
+    { new: true }
+  ).populate([
+    {
+      path: "participants",
+      select: "_id userName displayName avatarUrl status socketId",
+    },
+    { path: "lastMessage", select: "_id content" },
+  ]);
+
+  return res.status(conversation ? 200 : 404).json({
+    success: !!conversation,
+    mes: conversation ? undefined : "Không tìm thấy cuộc trò truyện nào.",
+    data: conversation ? conversation : undefined,
+  });
+});
+
+const updateParticipants = asyncHandler(async (req, res) => {
+  const { conversationId } = req.params;
+  const { participants, isPush } = req.body;
+
+  let conversation = await Conversation.findById(conversationId);
+  if (!conversation) throw new Error("Không tìm thấy cuộc trò truyện nào.");
+  if (isPush)
+    for (let participant of participants)
+      conversation.participants.push(participant);
+  else
+    for (let participant of participants)
+      conversation.participants = conversation.participants.filter(
+        (item) => item._id !== participant
+      );
+  await conversation.save({ new: true, validateModifiedOnly: true });
+
+  return res.status(200).json({
+    success: true,
+    mes: "Cập nhật thành viên thành công.",
+    data: conversation,
+  });
+});
+
+module.exports = {
+  getAllConversations,
+  getConversation,
+  updateNameConversation,
+  updateParticipants,
+};
